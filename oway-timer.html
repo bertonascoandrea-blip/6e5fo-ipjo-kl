@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OWAY Timer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@200;300;400;500&display=swap');
+
+  :root {
+    --bg: #f5f0e8;
+    --surface: #ece5d8;
+    --border: #d4cabb;
+    --text: #2c2a25;
+    --text-dim: #7a7568;
+    --accent: #5a6e50;
+    --accent-light: #7a9a6c;
+    --accent-glow: rgba(90, 110, 80, 0.2);
+    --warm: #c4a96a;
+    --warm-glow: rgba(196, 169, 106, 0.25);
+    --red: #a65d57;
+    --red-glow: rgba(166, 93, 87, 0.2);
+    --cream: #faf7f0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Jost', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Subtle organic texture */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse at 20% 80%, rgba(90, 110, 80, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(196, 169, 106, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Subtle grain */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    text-align: center;
+    z-index: 1;
+    animation: fadeUp 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .logo {
+    width: 70px;
+    height: auto;
+    margin-bottom: 1.8rem;
+    filter: brightness(0) opacity(0.8);
+  }
+
+  .title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    font-weight: 300;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 2.5rem;
+  }
+
+  /* Decorative line */
+  .divider {
+    width: 40px;
+    height: 1px;
+    background: var(--border);
+    margin: 0 auto 2rem;
+  }
+
+  /* Input Mode */
+  .input-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.8rem;
+  }
+
+  .time-inputs {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  .time-field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .time-field label {
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 300;
+  }
+
+  .time-field input {
+    width: 82px;
+    height: 74px;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'Jost', sans-serif;
+    font-size: 2rem;
+    font-weight: 300;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.4s, box-shadow 0.4s;
+  }
+
+  .time-field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .separator {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8rem;
+    font-weight: 300;
+    color: var(--border);
+    margin-top: 1rem;
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 0.2rem;
+  }
+
+  .btn {
+    padding: 0.8rem 1.8rem;
+    border: none;
+    border-radius: 3px;
+    font-family: 'Jost', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--cream);
+  }
+
+  .btn-primary:hover {
+    background: var(--accent-light);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px var(--accent-glow);
+  }
+
+  .btn-popup {
+    background: var(--warm);
+    color: var(--cream);
+  }
+
+  .btn-popup:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px var(--warm-glow);
+  }
+
+  .btn-secondary {
+    background: var(--cream);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--text-dim);
+  }
+
+  .btn-danger {
+    background: var(--red);
+    color: var(--cream);
+  }
+
+  .btn-danger:hover {
+    box-shadow: 0 4px 16px var(--red-glow);
+  }
+
+  /* Preset buttons */
+  .presets {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .preset-btn {
+    padding: 0.4rem 0.85rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text-dim);
+    font-family: 'Jost', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .preset-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(90, 110, 80, 0.04);
+  }
+
+  /* Info box */
+  .popup-info {
+    margin-top: 0.5rem;
+    padding: 0.9rem 1.4rem;
+    background: rgba(90, 110, 80, 0.05);
+    border: 1px solid rgba(90, 110, 80, 0.12);
+    border-radius: 4px;
+    font-size: 0.72rem;
+    color: var(--accent);
+    max-width: 340px;
+    line-height: 1.7;
+    font-weight: 300;
+  }
+
+  .popup-info strong {
+    font-weight: 500;
+  }
+
+  /* Timer Display */
+  .timer-display {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .timer-display.active { display: flex; }
+  .input-section.hidden { display: none; }
+
+  .progress-ring {
+    position: relative;
+    width: 260px;
+    height: 260px;
+  }
+
+  .progress-ring svg {
+    transform: rotate(-90deg);
+  }
+
+  .progress-ring .bg {
+    stroke: var(--border);
+  }
+
+  .progress-ring .fg {
+    stroke: var(--accent);
+    transition: stroke-dashoffset 1s linear, stroke 0.6s;
+    filter: drop-shadow(0 0 6px var(--accent-glow));
+  }
+
+  .progress-ring .fg.warning { stroke: var(--warm); }
+  .progress-ring .fg.danger { stroke: var(--red); }
+
+  .progress-ring .time-inside {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .countdown {
+    font-family: 'Jost', sans-serif;
+    font-size: 3.4rem;
+    font-weight: 200;
+    letter-spacing: 0.08em;
+    color: var(--text);
+  }
+
+  .countdown.warning { color: var(--warm); }
+  .countdown.danger {
+    color: var(--red);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .status-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 300;
+    margin-top: 0.3rem;
+  }
+
+  .status-label.done {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* Leaf decoration */
+  .leaf {
+    position: fixed;
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .leaf-1 {
+    top: 10%;
+    right: 8%;
+    font-size: 8rem;
+    transform: rotate(25deg);
+  }
+  .leaf-2 {
+    bottom: 12%;
+    left: 6%;
+    font-size: 6rem;
+    transform: rotate(-40deg);
+  }
+
+  /* Popup-specific */
+  body.popup-mode {
+    min-height: auto;
+    padding: 1.2rem;
+  }
+
+  body.popup-mode .logo { width: 45px; margin-bottom: 1rem; }
+  body.popup-mode .title { font-size: 0.8rem; margin-bottom: 1.5rem; }
+  body.popup-mode .countdown { font-size: 2.6rem; }
+  body.popup-mode .progress-ring { width: 190px; height: 190px; }
+  body.popup-mode .leaf { display: none; }
+  body.popup-mode .divider { margin-bottom: 1.2rem; }
+</style>
+</head>
+<body>
+
+  <div class="leaf leaf-1">🌿</div>
+  <div class="leaf leaf-2">🍃</div>
+
+  <div class="container">
+    <img class="logo" src="data:image/jpeg;base64,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" alt="OWAY">
+    <div class="title">Timer</div>
+    <div class="divider"></div>
+
+    <div class="input-section" id="inputSection">
+      <div class="time-inputs">
+        <div class="time-field">
+          <label>Ore</label>
+          <input type="number" id="hours" min="0" max="99" value="0" />
+        </div>
+        <span class="separator">:</span>
+        <div class="time-field">
+          <label>Minuti</label>
+          <input type="number" id="minutes" min="0" max="59" value="5" />
+        </div>
+        <span class="separator">:</span>
+        <div class="time-field">
+          <label>Secondi</label>
+          <input type="number" id="seconds" min="0" max="59" value="0" />
+        </div>
+      </div>
+
+      <div class="presets">
+        <button class="preset-btn" onclick="setPreset(1)">1 min</button>
+        <button class="preset-btn" onclick="setPreset(5)">5 min</button>
+        <button class="preset-btn" onclick="setPreset(10)">10 min</button>
+        <button class="preset-btn" onclick="setPreset(15)">15 min</button>
+        <button class="preset-btn" onclick="setPreset(25)">25 min</button>
+        <button class="preset-btn" onclick="setPreset(30)">30 min</button>
+        <button class="preset-btn" onclick="setPreset(60)">1 ora</button>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="startTimer(false)">▶ Avvia qui</button>
+        <button class="btn btn-popup" onclick="startTimer(true)">⬗ Pop-up</button>
+      </div>
+
+      <div class="popup-info">
+        Il pulsante <strong>Pop-up</strong> apre il timer in una finestra separata che resta visibile anche cambiando scheda — perfetto per monitorare i tempi di posa.
+      </div>
+    </div>
+
+    <div class="timer-display" id="timerDisplay">
+      <div class="progress-ring">
+        <svg width="100%" height="100%" viewBox="0 0 260 260">
+          <circle class="bg" cx="130" cy="130" r="115" fill="none" stroke-width="4" />
+          <circle class="fg" id="progressCircle" cx="130" cy="130" r="115" fill="none" stroke-width="4"
+            stroke-linecap="round" stroke-dasharray="722.57" stroke-dashoffset="0" />
+        </svg>
+        <div class="time-inside">
+          <div class="countdown" id="countdown">00:00:00</div>
+          <div class="status-label" id="statusLabel">in corso</div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" id="pauseBtn" onclick="togglePause()">⏸ Pausa</button>
+        <button class="btn btn-danger" onclick="resetTimer()">⏹ Ferma</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let totalSeconds = 0;
+    let remainingSeconds = 0;
+    let timerInterval = null;
+    let isPaused = false;
+    const circumference = 2 * Math.PI * 115;
+
+    // Check if opened as popup with params
+    const params = new URLSearchParams(window.location.search);
+    const popupTime = params.get('t');
+    if (popupTime) {
+      document.body.classList.add('popup-mode');
+      totalSeconds = parseInt(popupTime);
+      remainingSeconds = totalSeconds;
+      showTimerDisplay();
+      runTimer();
+    }
+
+    function setPreset(mins) {
+      document.getElementById('hours').value = Math.floor(mins / 60);
+      document.getElementById('minutes').value = mins % 60;
+      document.getElementById('seconds').value = 0;
+    }
+
+    function getTotalSeconds() {
+      const h = parseInt(document.getElementById('hours').value) || 0;
+      const m = parseInt(document.getElementById('minutes').value) || 0;
+      const s = parseInt(document.getElementById('seconds').value) || 0;
+      return h * 3600 + m * 60 + s;
+    }
+
+    function startTimer(asPopup) {
+      const t = getTotalSeconds();
+      if (t <= 0) return;
+
+      if (asPopup) {
+        const w = 380, h = 420;
+        const left = screen.width - w - 40;
+        const top = 40;
+        const features = `width=${w},height=${h},left=${left},top=${top},resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`;
+        const popupUrl = window.location.pathname + '?t=' + t;
+        const popup = window.open(popupUrl, 'owayTimer', features);
+        if (!popup || popup.closed) {
+          alert('Il browser ha bloccato il pop-up.\nConsenti i pop-up per questo sito nelle impostazioni.');
+        }
+        return;
+      }
+
+      totalSeconds = t;
+      remainingSeconds = t;
+      showTimerDisplay();
+      runTimer();
+    }
+
+    function showTimerDisplay() {
+      const input = document.getElementById('inputSection');
+      const display = document.getElementById('timerDisplay');
+      if (input) input.classList.add('hidden');
+      display.classList.add('active');
+      updateDisplay();
+    }
+
+    function runTimer() {
+      isPaused = false;
+      timerInterval = setInterval(() => {
+        if (isPaused) return;
+        remainingSeconds--;
+        if (remainingSeconds <= 0) {
+          remainingSeconds = 0;
+          clearInterval(timerInterval);
+          timerInterval = null;
+          onTimerEnd();
+        }
+        updateDisplay();
+        updateTitle();
+      }, 1000);
+    }
+
+    function updateDisplay() {
+      const h = Math.floor(remainingSeconds / 3600);
+      const m = Math.floor((remainingSeconds % 3600) / 60);
+      const s = remainingSeconds % 60;
+      const pad = n => String(n).padStart(2, '0');
+      const timeStr = `${pad(h)}:${pad(m)}:${pad(s)}`;
+
+      const cd = document.getElementById('countdown');
+      const circle = document.getElementById('progressCircle');
+      const label = document.getElementById('statusLabel');
+
+      cd.textContent = timeStr;
+
+      const progress = totalSeconds > 0 ? remainingSeconds / totalSeconds : 0;
+      const offset = circumference * (1 - progress);
+      circle.style.strokeDashoffset = offset;
+
+      const pct = totalSeconds > 0 ? (remainingSeconds / totalSeconds) * 100 : 0;
+      cd.className = 'countdown';
+      circle.className.baseVal = 'fg';
+      label.className = 'status-label';
+      label.textContent = isPaused ? 'in pausa' : 'in corso';
+
+      if (pct <= 10 && pct > 0) {
+        cd.classList.add('danger');
+        circle.classList.add('danger');
+      } else if (pct <= 25) {
+        cd.classList.add('warning');
+        circle.classList.add('warning');
+      }
+    }
+
+    function updateTitle() {
+      const h = Math.floor(remainingSeconds / 3600);
+      const m = Math.floor((remainingSeconds % 3600) / 60);
+      const s = remainingSeconds % 60;
+      const pad = n => String(n).padStart(2, '0');
+      document.title = `${pad(h)}:${pad(m)}:${pad(s)} — OWAY Timer`;
+    }
+
+    function togglePause() {
+      isPaused = !isPaused;
+      const btn = document.getElementById('pauseBtn');
+      btn.textContent = isPaused ? '▶ Riprendi' : '⏸ Pausa';
+      updateDisplay();
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      isPaused = false;
+      document.title = 'OWAY Timer';
+
+      if (popupTime) { window.close(); return; }
+
+      const input = document.getElementById('inputSection');
+      const display = document.getElementById('timerDisplay');
+      input.classList.remove('hidden');
+      display.classList.remove('active');
+    }
+
+    function onTimerEnd() {
+      const cd = document.getElementById('countdown');
+      const label = document.getElementById('statusLabel');
+      cd.textContent = '00:00:00';
+      cd.className = 'countdown danger';
+      label.textContent = 'tempo scaduto';
+      label.className = 'status-label done';
+      document.title = '✓ TEMPO SCADUTO — OWAY';
+
+      // Audio alert
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        function beep(freq, start, dur) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.25, ctx.currentTime + start);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + start);
+          osc.stop(ctx.currentTime + start + dur);
+        }
+        beep(660, 0, 0.35);
+        beep(660, 0.45, 0.35);
+        beep(880, 0.95, 0.5);
+      } catch(e) {}
+
+      // Notification
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('OWAY Timer', { body: 'Il tempo è scaduto.' });
+      }
+
+      // Gentle flash
+      let flashes = 0;
+      const flashInterval = setInterval(() => {
+        document.body.style.background = flashes % 2 === 0 ? '#ece5d8' : 'var(--bg)';
+        flashes++;
+        if (flashes > 6) {
+          clearInterval(flashInterval);
+          document.body.style.background = 'var(--bg)';
+        }
+      }, 400);
+    }
+
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  </script>
+</body>
+</html>
